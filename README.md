@@ -82,3 +82,30 @@ Project Organization
 
 
 
+# bank_customer
+
+### Question
+
+
+
+### Hypothesis
+
+
+
+### Data Sources
+
+
+
+### Data Descriptions
+
+
+
+### Steps
+
+
+
+### Conclusion
+
+
+
+
