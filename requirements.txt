@@ -1,3 +1,10 @@
+pandasql
+seaborn
+numpy
+pandas
+matplotlib
+scikit-learn
+
 # local package
 -e .
 
