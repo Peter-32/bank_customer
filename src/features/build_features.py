@@ -1,9 +1,8 @@
-from numpy import c_, searchsorted
-from sklearn.cluster import KMeans
-from featexp import univariate_plotter
-from pandas import DataFrame, get_dummies
-from sklearn.preprocessing import KernelCenterer
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, Binarizer
+import numpy as np
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, \
+                                  CategoricalEncoder
+from pandas import read_csv
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -121,35 +120,94 @@ def _get_expected_bank_balance_by_income(income):
 def _get_loan_unknown_and_housing_unknown(loan_unknown, housing_unknown):
     return 1 if loan_unknown == 1 and housing_unknown == 1 else 0
 
-def changes_to_dataset(df):
-    # Drop highly columns highly correlated with `nr.employed`
-    df.drop(["euribor3m", "emp.var.rate"], axis=1, inplace=True)
+from sklearn.base import BaseEstimator, TransformerMixin
 
-    # Add/remove features
-    df['education_level'] = df['education'].apply(_get_education_level)
-    df['expected_income'] = df[['job', 'age']].apply(lambda x: _get_expected_income(*x), axis=1)
-    df['expected_bank_balance_by_income'] = df['expected_income'].apply(_get_expected_bank_balance_by_income)
-    df['expected_bank_balance_by_age'] = df['age'].apply(_get_expected_bank_balance_by_age)
-    df['age_gte_61'] = df['age'].apply(lambda x: 1 if x >= 61 else 0)
-    df['age_lte_23'] = df['age'].apply(lambda x: 1 if x <= 23 else 0)
-    df.drop(['age', 'expected_bank_balance_by_income'], axis=1, inplace=True)
-    df = pd.concat([df.select_dtypes(exclude="O"), \
-           pd.get_dummies(df.select_dtypes(include="O"), drop_first=True)], axis=1)
-    df["loan_unknown_and_housing_unknown"] = \
-        df[["loan_unknown", "housing_unknown"]].\
-            apply(lambda x: _get_loan_unknown_and_housing_unknown(*x), axis=1)
-    df.drop(["education_university.degree", "loan_unknown", "housing_unknown"], axis=1, inplace=True)
+class DataFrameSelector(BaseEstimator, TransformerMixin):
+    def __init__(self, attribute_names):
+        self.attribute_names = attribute_names
+    def fit(self, X, y=None):
+        return self
+    def transform(self, X, y=None):
+        return X[self.attribute_names].values
 
+a_age_ix, a_emp_var_rate_ix, a_euribor3m_ix = 0, 4, 7
+
+class NewNumericAttributesAdder(BaseEstimator, TransformerMixin):
+    def __init__(self, add_age_booleans=True):
+        self.add_age_booleans = add_age_booleans
+    def fit(self, X, y=None):
+        return self
+    def transform(self, X, y=None):
+        expected_bank_balance_by_age = np.vectorize(_get_expected_bank_balance_by_age)(X[:, a_age_ix])
+        if self.add_age_booleans:
+            age_gte_61 = np.vectorize(lambda x: 1 if x >= 61 else 0)(X[:, a_age_ix])
+            age_lte_23 = np.vectorize(lambda x: 1 if x <= 23 else 0)(X[:, a_age_ix])
+            return np.c_[X, expected_bank_balance_by_age, age_gte_61, age_lte_23]
+        else:
+            return np.c_[X, expected_bank_balance_by_age]
+
+class DropCorrelatedFeatures(BaseEstimator, TransformerMixin):
+    def __init__(self, drop_indicators, drop_age):
+        self.drop_indicators = drop_indicators
+        self.drop_age = drop_age
+    def fit(self, X, y=None):
+        return self
+    def transform(self, X, y=None):
+        if self.drop_indicators and self.drop_age:
+            new_X = np.delete(X, [a_age_ix, a_emp_var_rate_ix, a_euribor3m_ix], 1)
+        elif self.drop_indicators:
+            new_X = np.delete(X, [a_emp_var_rate_ix, a_euribor3m_ix], 1)
+        elif self.drop_age:
+            new_X = np.delete(X, [a_age_ix], 1)
+        return np.c[new_X]
+
+b_age_ix, b_job_ix, b_education_ix = 0, 1, 2
+
+class NewHybridAttributesAdder(BaseEstimator, TransformerMixin):
+    def __init__(self, add_income=True):
+        self.add_income = add_income
+    def fit(self, X, y=None):
+        return self
+    def transform(self, X, y=None):
+        education_level = np.vectorize(_get_education_level)(X[:, b_education_ix])
+        if self.add_income:
+            expected_income = np.vectorize(_get_expected_income)(X[:, b_job_ix], X[:, b_age_ix])
+            expected_bank_balance_by_income = np.vectorize(_get_expected_bank_balance_by_income)(expected_income)
+            return np.c_[education_level, expected_income, expected_bank_balance_by_income]
+        else:
+            return np.c_[education_level]
 
 def data_preparation():
     # Extract
     train = read_csv("../../data/interim/train.csv")
     test = read_csv("../../data/interim/test.csv")
 
-    # Prepare the data
-    changes_to_dataset(train)
-    changes_to_dataset(test)
+    num_attribs = train.select_dtypes(exclude="O").drop(["y"], axis=1)
+    hybrid_attribs = train[["age", "job", "education"]]
+    cat_attribs = train.select_dtypes(include="O")
 
-    # Save the data
-    train.to_csv("../../data/interim/prepared_train.csv")
-    test.to_csv("../../data/interim/prepared_test.csv")
+    num_pipeline = Pipeline([
+        ('selector', DataFrameSelector(num_attribs)),
+        ('new_numeric_attribs_adder', NewNumericAttributesAdder()),
+        ('std_scaler', StandardScaler()),
+        ('minmax_scaler', MinMaxScaler()),
+    ])
+
+    hybrid_pipeline = Pipeline([
+        ('selector', DataFrameSelector(hybrid_attribs)),
+        ('new_hybrid_attribs_adder', NewHybridAttributesAdder()),
+        ('std_scaler', StandardScaler()),
+        ('minmax_scaler', MinMaxScaler()),
+    ])
+
+    cat_pipeline = Pipeline([
+        ('selector', DataFrameSelector(cat_attribs)),
+        ('cat_encoder', CategoricalEncoder(encoding="onehot-dense")),
+    ])
+
+    from sklearn.pipeline import FeatureUnion
+
+    full_pipeline = FeatureUnion(transformer_list=[
+        ("num_pipeline", num_pipeline),
+        ("cat_pipeline", cat_pipeline),
+    ])
