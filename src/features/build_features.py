@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, \
-                                  CategoricalEncoder
+                                  OneHotEncoder
 from pandas import read_csv
 import warnings
 warnings.filterwarnings("ignore")
@@ -180,11 +180,12 @@ class NewHybridAttributesAdder(BaseEstimator, TransformerMixin):
 def data_preparation():
     # Extract
     train = read_csv("../../data/interim/train.csv")
-    test = read_csv("../../data/interim/test.csv")
 
-    num_attribs = train.select_dtypes(exclude="O").drop(["y"], axis=1)
-    hybrid_attribs = train[["age", "job", "education"]]
-    cat_attribs = train.select_dtypes(include="O")
+    train_y = train[["y"]].values
+
+    num_attribs = train.select_dtypes(exclude="O").drop(["y"], axis=1).columns
+    hybrid_attribs = train[["age", "job", "education"]].columns
+    cat_attribs = train.select_dtypes(include="O").columns
 
     num_pipeline = Pipeline([
         ('selector', DataFrameSelector(num_attribs)),
@@ -202,12 +203,25 @@ def data_preparation():
 
     cat_pipeline = Pipeline([
         ('selector', DataFrameSelector(cat_attribs)),
-        ('cat_encoder', CategoricalEncoder(encoding="onehot-dense")),
+        ('cat_encoder', OneHotEncoder(drop='first')),
     ])
 
     from sklearn.pipeline import FeatureUnion
 
     full_pipeline = FeatureUnion(transformer_list=[
         ("num_pipeline", num_pipeline),
+        ("hybrid_pipeline", hybrid_pipeline),
         ("cat_pipeline", cat_pipeline),
     ])
+
+    train_X_prepared = full_pipeline.fit_transform(train)
+
+    from sklearn.linear_model import LogisticRegression
+
+    model = LogisticRegression()
+    model.fit(train_X_prepared, train_y)
+    pred_y = model.predict(train_X_prepared)
+
+    from sklearn.metrics import accuracy_score
+    accuracy = accuracy_score(train_y, pred_y)
+    print("Accuracy score is {}".format(accuracy))
