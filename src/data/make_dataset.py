@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 import warnings
 warnings.filterwarnings("ignore")
 
-def make_train_test_sets():
+def etl():
     # Set seed - ensures that the datasets are split the same way if re-run
     seed(40)
 
@@ -33,22 +33,6 @@ def make_train_test_sets():
     # Write results to files
     train.to_csv("../../data/interim/train.csv", index=False)
     test.to_csv("../../data/interim/test.csv", index=False)
-
-def dataset_modifications_after_exploring_data():
-    # Extract
-    train = read_csv("../../data/interim/train.csv")
-    test = read_csv("../../data/interim/test.csv")
-
-    # Drop highly columns highly correlated with `nr.employed`
-    train.drop(["euribor3m", "emp.var.rate"], axis=1, inplace=True)
-    test.drop(["euribor3m", "emp.var.rate"], axis=1, inplace=True)
-
-    train["campaign"] = train["campaign"].apply(lambda x: x - 1)
-    test["campaign"] = test["campaign"].apply(lambda x: x - 1)
-
-    # Write results to files
-    train.to_csv("../../data/interim/train_v2.csv", index=False)
-    test.to_csv("../../data/interim/test_v2.csv", index=False)
 
 @click.command()
 @click.argument('input_filepath', type=click.Path(exists=True))
