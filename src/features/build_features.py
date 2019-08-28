@@ -179,9 +179,7 @@ class NewHybridAttributesAdder(BaseEstimator, TransformerMixin):
 
 def data_preparation():
     # Extract
-    train = read_csv("../../data/interim/train.csv")
-
-    train_y = train[["y"]].values
+    train = read_csv("../../data/interim/train.csv", nrows=250)
 
     num_attribs = train.select_dtypes(exclude="O").drop(["y"], axis=1).columns
     hybrid_attribs = train[["age", "job", "education"]].columns
@@ -208,20 +206,10 @@ def data_preparation():
 
     from sklearn.pipeline import FeatureUnion
 
-    full_pipeline = FeatureUnion(transformer_list=[
+    features_pipeline = FeatureUnion(transformer_list=[
         ("num_pipeline", num_pipeline),
         ("hybrid_pipeline", hybrid_pipeline),
         ("cat_pipeline", cat_pipeline),
     ])
 
-    train_X_prepared = full_pipeline.fit_transform(train)
-
-    from sklearn.linear_model import LogisticRegression
-
-    model = LogisticRegression()
-    model.fit(train_X_prepared, train_y)
-    pred_y = model.predict(train_X_prepared)
-
-    from sklearn.metrics import accuracy_score
-    accuracy = accuracy_score(train_y, pred_y)
-    print("Accuracy score is {}".format(accuracy))
+    return features_pipeline

@@ -2,7 +2,12 @@
 import os; import sys; currDir = os.path.dirname(os.path.realpath("__file__"))
 rootDir = os.path.abspath(os.path.join(currDir, '..')); sys.path.insert(1, rootDir)
 
-# Imports
+import warnings
+warnings.filterwarnings("ignore")
+
+# My modules
+from models.train_model import *
 from features.build_features import *
 
-data_preparation()
+features_pipeline = data_preparation()
+train_model(features_pipeline)
