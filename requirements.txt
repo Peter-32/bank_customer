@@ -1,3 +1,6 @@
+shap
+xgboost
+lightgbm
 alabaster==0.7.12
 appnope==0.1.0
 attrs==19.1.0
@@ -65,7 +68,7 @@ sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.2
 sphinxcontrib-serializinghtml==1.1.3
 SQLAlchemy==1.3.7
--e git+git@github.com:Peter-32/bank_customer.git@f0be8055731181ee20fdf4316a9f03266134d6e5#egg=src
+-e git+git@github.com:Peter-32/bank_customer.git@b4561c6e70654c499d9f5fa60e42092896a0e989#egg=src
 tornado==6.0.3
 traitlets==4.3.2
 urllib3==1.25.3

@@ -10,4 +10,4 @@ from models.train_model import *
 from features.build_features import *
 
 features_pipeline = data_preparation()
-train_model(features_pipeline)
+learning_curves(features_pipeline)

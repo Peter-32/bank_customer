@@ -11,3 +11,7 @@ from features.build_features import *
 
 features_pipeline = data_preparation()
 train_model(features_pipeline)
+
+
+gs = ...
+cross_val_score(estimator=gs
