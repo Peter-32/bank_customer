@@ -28,10 +28,12 @@ def etl():
     df.drop(["duration"], axis=1, inplace=True)
 
     # Split datasets
-    train, test = train_test_split(df, test_size=0.2)
+    temp, test = train_test_split(df, test_size=0.2)
+    train, dev = train_test_split(temp, test_size=0.25)
 
     # Write results to files
     train.to_csv("../../data/interim/train.csv", index=False)
+    dev.to_csv("../../data/interim/dev.csv", index=False)
     test.to_csv("../../data/interim/test.csv", index=False)
 
 @click.command()
