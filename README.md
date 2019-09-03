@@ -13,7 +13,7 @@ A computer program is said to learn from experience E with respect to some class
 
 - E - A list of clients with attributes about the clients
 - T - Classify if a client will make a particular cash investment with the bank
-- P - Kappa (normalized accuracy), the number of clients correctly classified whether they will make this investment (yes/no).
+- P - Maximize recall with 20% precision; aim for a 20% success rate per call and include as many sales as possible
 
 
 ## Assumptions

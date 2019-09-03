@@ -28,3 +28,7 @@ def _add_category_features(df):
     # # Save the data
     # train.to_csv("../../data/interim/prepared_train.csv")
     # test.to_csv("../../data/interim/prepared_test.csv")
+
+
+# prob_y = cross_val_predict(estimator=full_pipeline, X=train, y=train_y,
+#                          cv=10, n_jobs=1, method='predict_proba')

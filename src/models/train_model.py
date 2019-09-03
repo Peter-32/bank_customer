@@ -17,7 +17,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_val_score, learning_curve
 
-def _common_code():
+def learning_curves(features_pipeline):
     seed(40)
     train = read_csv("../../data/interim/train.csv")
     train_y = train[["y"]].values
@@ -25,16 +25,7 @@ def _common_code():
         ("features", features_pipeline),
         ("clf", LogisticRegression(random_state=1)),
     ])
-    return full_pipeline, train, train_y
 
-
-def train_model(features_pipeline):
-    full_pipeline, train, train_y = _common_code()
-    get_score(full_pipeline, train, train_y)
-
-
-def learning_curves(features_pipeline):
-    full_pipeline, train, train_y = _common_code()
     train_sizes, train_scores, test_scores = \
         learning_curve(estimator=full_pipeline,
                        X=train,
