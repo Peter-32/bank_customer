@@ -23,12 +23,14 @@ from numpy.random import seed
 import lightgbm as lgb
 
 # Inputs
-SHOW_ERROR_ANALYSIS = False
+SHOW_ERROR_ANALYSIS = True
 
 # Extract
 seed(40)
 train = read_csv("../../data/interim/train.csv")
 train_y = train[["y"]].values
+dev = read_csv("../../data/interim/dev.csv")
+dev_y = dev[["y"]].values
 
 # Data parameters
 features_pipeline = data_preparation()
@@ -44,8 +46,8 @@ full_pipeline.fit(train, train_y)
 
 # Predict
 precision_threshold = 0.20
-prob_y = full_pipeline.predict_proba(train)[:, 1]
-precision, recall, thresholds = precision_recall_curve(train_y, prob_y, pos_label=1)
+prob_y = full_pipeline.predict_proba(dev)[:, 1]
+precision, recall, thresholds = precision_recall_curve(dev_y, prob_y, pos_label=1)
 score = max([y for (x,y) in zip(precision, recall) if x >= precision_threshold])
 print('Recall score: %.3f' % score)
 
@@ -53,10 +55,10 @@ print('Recall score: %.3f' % score)
 # Error analysis
 if SHOW_ERROR_ANALYSIS:
     precision_threshold_index = min([i for (x,i) in zip(precision, range(len(precision))) if x >= precision_threshold])
-    train["prob_y"] = prob_y
+    dev["prob_y"] = prob_y
     prob_y_threshold = (list(thresholds) + [1.1])[precision_threshold_index]
     pred_y = (prob_y >= prob_y_threshold).astype(bool)
     print("Prob y Threshold: %.1f" % (prob_y_threshold*100))
-    print(confusion_matrix(train_y, pred_y))
-    print("Recall: %.1f" % (recall_score(train_y, pred_y)*100))
-    print("Precision: %.1f" % (precision_score(train_y, pred_y)*100))
+    print(confusion_matrix(dev_y, pred_y))
+    print("Recall: %.1f" % (recall_score(dev_y, pred_y)*100))
+    print("Precision: %.1f" % (precision_score(dev_y, pred_y)*100))
