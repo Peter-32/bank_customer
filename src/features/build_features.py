@@ -256,7 +256,7 @@ def data_preparation():
     cat_pipeline = Pipeline([
         ('selector', DataFrameSelector(cat_attribs)),
         ('drop_unimportant_category_values', DropUnimportantCategoryValues()),
-        ('cat_encoder', OneHotEncoder(drop='first')),
+        ('cat_encoder', OneHotEncoder(drop='first', sparse=False)),
         # ('log_X_shape', LogXShape()),
     ])
 

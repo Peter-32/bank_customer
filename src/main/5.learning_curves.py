@@ -29,6 +29,8 @@ import lightgbm as lgb
 seed(40)
 train = read_csv("../../data/interim/train.csv")
 train_y = train[["y"]].values
+dev = read_csv("../../data/interim/dev.csv")
+dev_y = dev[["y"]].values
 
 # Data parameters
 features_pipeline = data_preparation()
@@ -36,46 +38,34 @@ features_pipeline = data_preparation()
 # Model parameters
 full_pipeline = Pipeline([
     ("features", features_pipeline),
-    # ("clf", LogisticRegression(random_state=1)),
-    ("clf", lgb.LGBMClassifier(class_weight='balanced')),
+    ("clf", LogisticRegression(random_state=1)),
+    # ("clf", lgb.LGBMClassifier(class_weight='balanced')),
 ])
-
-# TESTING THIS NEW CODE:
-# TESTING THIS NEW CODE:
-# TESTING THIS NEW CODE:
-# TESTING THIS NEW CODE:
-def custom_cv_2folds(X):
-    n = X.shape[0]
-    i = 1
-    while i <= 2:
-        if i == 1:
-            idx = np.arange(n * (i - 1) / 2, n-15, dtype=int)
-            yield idx, idx
-        if i == 2:
-            idx = np.arange(n - 15, n, dtype=int)
-            yield idx, idx
-        i += 1
-custom_cv = custom_cv_2folds(train)
 
 # Learning curve
 train_sizes = (np.linspace(0.1, 1.0, 10)*train.shape[0]).astype(int)
-training_scores = []
+training_scores, dev_scores = [], []
 for train_size in train_sizes:
     temp_train = train.iloc[0:train_size]
     temp_train_y = temp_train[["y"]].values
     full_pipeline.fit(temp_train, temp_train_y)
     precision_threshold = 0.20
-    prob_y = full_pipeline.predict_proba(temp_train)[:, 1]
-    precision, recall, _ = precision_recall_curve(temp_train_y, prob_y, pos_label=1)
-    score = max([y for (x,y) in zip(precision, recall) if x >= precision_threshold])
-    training_scores.append(score)
+    train_prob_y = full_pipeline.predict_proba(train)[:, 1]
+    dev_prob_y = full_pipeline.predict_proba(dev)[:, 1]
+    train_precision, train_recall, _ = precision_recall_curve(train_y, train_prob_y, pos_label=1)
+    dev_precision, dev_recall, _ = precision_recall_curve(dev_y, dev_prob_y, pos_label=1)
+    training_scores.append(max([y for (x,y) in zip(train_precision, train_recall) if x >= precision_threshold]))
+    dev_scores.append(max([y for (x,y) in zip(dev_precision, dev_recall) if x >= precision_threshold]))
+
 
 plt.plot(train_sizes, training_scores,
          color='blue', marker='o', markersize=5, label='training accuracy')
+plt.plot(train_sizes, dev_scores,
+         color='green', marker='o', markersize=5, label='dev accuracy')
 plt.grid()
 plt.xlabel('Number of training samples')
 plt.ylabel('Recall')
 plt.legend(loc='lower right')
 plt.ylim([0.0, 1.0])
-plt.savefig("../../reports/figures/training_learning_curve.png")
+plt.savefig("../../reports/figures/lr_learning_curve.png")
 plt.show()

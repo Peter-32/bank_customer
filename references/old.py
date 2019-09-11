@@ -38,7 +38,7 @@ def _add_category_features(df):
 
 
 
-urve
+
 train_sizes, train_scores, test_scores = \
     learning_curve(estimator=full_pipeline,
                    X=train,

@@ -51,7 +51,6 @@ precision, recall, thresholds = precision_recall_curve(dev_y, prob_y, pos_label=
 score = max([y for (x,y) in zip(precision, recall) if x >= precision_threshold])
 print('Recall score: %.3f' % score)
 
-
 # Error analysis
 if SHOW_ERROR_ANALYSIS:
     precision_threshold_index = min([i for (x,i) in zip(precision, range(len(precision))) if x >= precision_threshold])
