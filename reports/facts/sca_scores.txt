@@ -1,1 +1,1 @@
-worked well: LR, LDA, LightGBM
+worked well: GBR, LR, LDA, LightGBM
