@@ -7,7 +7,7 @@ Bank Customer
 
 The classification goal is to predict if the client will make a particular cash investment with the bank.
 
-The data can be found here: https://archive.ics.uci.edu/ml/datasets/Bank+Marketing
+I found the data online on this website: https://archive.ics.uci.edu/ml/datasets/Bank+Marketing
 
 ## Formal
 
