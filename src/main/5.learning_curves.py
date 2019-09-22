@@ -7,7 +7,6 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # My modules
-from models.train_model import *
 from features.build_features import *
 
 # Public modules
